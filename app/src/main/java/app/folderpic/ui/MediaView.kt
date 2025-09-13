@@ -51,7 +51,7 @@ fun MediaView(folderId: Long, mediaId: Long) {
         Box {
             HorizontalPager(state = pagerState) { page ->
                 val item = mediaItems[page]
-                val zoomState = rememberZoomState(contentSize)
+                val zoomState = rememberZoomState()
                 if(item.mimeType.startsWith("image")) {
                     AsyncImage(
                         model = item.uri,
