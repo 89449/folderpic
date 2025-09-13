@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -70,7 +72,13 @@ fun MediaView(folderId: Long, mediaId: Long) {
                     VideoPlayer(
                         uri = item.uri,
                         currentPage = pagerState.currentPage == page,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { isToolbarVisible = !isToolbarVisible }
+                                )
+                            }
                     )
                 }
             }
