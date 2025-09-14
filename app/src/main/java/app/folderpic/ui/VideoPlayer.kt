@@ -18,48 +18,52 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
 @Composable
-fun VideoPlayer(uri: Uri, currentPage: Boolean, modifier: Modifier = Modifier) {
+fun VideoPlayer(
+    uri: Uri, 
+    currentPage: Boolean, 
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             repeatMode = Player.REPEAT_MODE_ONE
+            setMediaItem(MediaItem.fromUri(uri)) 
+            prepare()
         }
     }
 
-    DisposableEffect(uri) {
-        val mediaItem = MediaItem.fromUri(uri)
-        exoPlayer.setMediaItem(mediaItem)
-        exoPlayer.prepare()
-        onDispose {
-            exoPlayer.release()
-        }
-    }
-
-    LaunchedEffect(currentPage) {
-        if (currentPage) {
+    LaunchedEffect(currentPage, isPlaying) {
+        if (currentPage && isPlaying) {
             exoPlayer.play()
         } else {
             exoPlayer.pause()
-            exoPlayer.seekTo(0)
+            if (!currentPage) {
+                exoPlayer.seekTo(0)
+            }
         }
     }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(key1 = lifecycleOwner, key2 = uri) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
                     exoPlayer.pause()
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    exoPlayer.play()
+                    if (currentPage && isPlaying) {
+                        exoPlayer.play()
+                    }
                 }
                 else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        
         onDispose {
+            exoPlayer.release()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
