@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,10 +26,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.common.MediaItem as ExoMediaItem
-import androidx.media3.common.Player
-import kotlinx.coroutines.delay
 
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -43,23 +38,13 @@ import app.folderpic.data.MediaLoader
 fun MediaView(folderId: Long, mediaId: Long) {
     val context = LocalContext.current
     var mediaItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
-    var isToolbarVisible by rememberSaveable { mutableStateOf(true) }
-    var isPlaying by rememberSaveable { mutableStateOf(true) }
+    var isToolbarVisible by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(true) }
     
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-        }
-    }
-
-    var videoPosition by remember { mutableStateOf(0L) }
-    var videoDuration by remember { mutableStateOf(0L) }
-    var isSeeking by remember { mutableStateOf(false) }
-
     LaunchedEffect(folderId) {
         mediaItems = MediaLoader(context).getMediaForFolder(folderId)
     }
-
+    
     if (mediaItems.isNotEmpty()) {
         val startingIndex = mediaItems.indexOfFirst { it.id == mediaId }
         val pagerState = rememberPagerState(
@@ -68,21 +53,6 @@ fun MediaView(folderId: Long, mediaId: Long) {
             mediaItems.size
         }
         val currentItem = mediaItems[pagerState.currentPage]
-        
-        LaunchedEffect(currentItem.uri) {
-            exoPlayer.setMediaItem(ExoMediaItem.fromUri(currentItem.uri))
-            exoPlayer.prepare()
-        }
-
-        LaunchedEffect(exoPlayer) {
-            while (true) {
-                if (exoPlayer.isPlaying && !isSeeking) {
-                    videoPosition = exoPlayer.currentPosition
-                    videoDuration = exoPlayer.duration
-                }
-                delay(500)
-            }
-        }
         
         Box(modifier = Modifier.background(Color.Black)) {
             HorizontalPager(state = pagerState) { page ->
@@ -95,18 +65,18 @@ fun MediaView(folderId: Long, mediaId: Long) {
                         modifier = Modifier
                             .fillMaxSize()
                             .zoomable(
-        	                	zoomState = zoomState,
-        	                	onTap = {
-        	                	    isToolbarVisible = !isToolbarVisible
-        	                	}
-    	                	),
+    	                	zoomState = zoomState,
+    	                	onTap = {
+    	                	    isToolbarVisible = !isToolbarVisible
+    	                	}
+	                	),
                         contentScale = ContentScale.Fit
                     )
                 } else {
                     VideoPlayer(
+                        uri = item.uri,
                         currentPage = pagerState.currentPage == page,
                         isPlaying = isPlaying,
-                        exoPlayer = exoPlayer,
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(Unit) {
@@ -130,18 +100,10 @@ fun MediaView(folderId: Long, mediaId: Long) {
                 )
                 if(currentItem.mimeType.startsWith("video/")) {
                     PlayerUI(
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter),
                         isPlaying = isPlaying,
-                        onTogglePlay = { isPlaying = !isPlaying },
-                        currentTime = videoPosition,
-                        totalDuration = videoDuration,
-                        onRewind = { exoPlayer.seekTo(exoPlayer.currentPosition - 10000) },
-                        onForward = { exoPlayer.seekTo(exoPlayer.currentPosition + 10000) },
-                        onSeekStart = { isSeeking = true },
-                        onSeekEnd = {
-                            exoPlayer.seekTo(it.toLong())
-                            isSeeking = false
-                        }
+                        onTogglePlay = { isPlaying = !isPlaying }
                     )
                 }
             }
