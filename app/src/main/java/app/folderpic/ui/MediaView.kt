@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -37,6 +39,7 @@ fun MediaView(folderId: Long, mediaId: Long) {
     val context = LocalContext.current
     var mediaItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     var isToolbarVisible by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(true) }
     
     LaunchedEffect(folderId) {
         mediaItems = MediaLoader(context).getMediaForFolder(folderId)
@@ -49,8 +52,9 @@ fun MediaView(folderId: Long, mediaId: Long) {
         ) {
             mediaItems.size
         }
+        val currentItem = mediaItems[pagerState.currentPage]
         
-        Box {
+        Box(modifier = Modifier.background(Color.Black)) {
             HorizontalPager(state = pagerState) { page ->
                 val item = mediaItems[page]
                 val zoomState = rememberZoomState()
@@ -72,6 +76,7 @@ fun MediaView(folderId: Long, mediaId: Long) {
                     VideoPlayer(
                         uri = item.uri,
                         currentPage = pagerState.currentPage == page,
+                        isPlaying = isPlaying,
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(Unit) {
@@ -93,6 +98,14 @@ fun MediaView(folderId: Long, mediaId: Long) {
                     },
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
+                if(currentItem.mimeType.startsWith("video/")) {
+                    PlayerUI(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter),
+                        isPlaying = isPlaying,
+                        onTogglePlay = { isPlaying = !isPlaying }
+                    )
+                }
             }
         }
     }
