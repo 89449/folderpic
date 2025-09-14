@@ -41,6 +41,12 @@ fun MediaView(folderId: Long, mediaId: Long) {
     var isToolbarVisible by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(true) }
     
+    var currentPosition by remember { mutableStateOf(0L) }
+    var duration by remember { mutableStateOf(0L) }
+    
+    var seekAction by remember { mutableStateOf<Long?>(null) }
+    var seekToPosition by remember { mutableStateOf<Long?>(null) }
+    
     LaunchedEffect(folderId) {
         mediaItems = MediaLoader(context).getMediaForFolder(folderId)
     }
@@ -77,12 +83,19 @@ fun MediaView(folderId: Long, mediaId: Long) {
                         uri = item.uri,
                         currentPage = pagerState.currentPage == page,
                         isPlaying = isPlaying,
+                        seekAction = seekAction,
+                        onSeekHandled = { seekAction = null },
+                        seekToPosition = if (pagerState.currentPage == page) seekToPosition else null,
+                        onSeekToPositionHandled = { seekToPosition = null },
+                        currentPosition = currentPosition,
+                        onPositionChange = { pos, dur ->
+                            currentPosition = pos
+                            duration = dur
+                        },
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = { isToolbarVisible = !isToolbarVisible }
-                                )
+                            .pointerInput(Unit) { 
+                                detectTapGestures( onTap = { isToolbarVisible = !isToolbarVisible } ) 
                             }
                     )
                 }
@@ -103,7 +116,16 @@ fun MediaView(folderId: Long, mediaId: Long) {
                         modifier = Modifier
                             .align(Alignment.BottomCenter),
                         isPlaying = isPlaying,
-                        onTogglePlay = { isPlaying = !isPlaying }
+                        onTogglePlay = { isPlaying = !isPlaying },
+                        onReplay = { seekAction = -10000 },
+                        onForward = { seekAction = 10000 },
+                        currentPosition = currentPosition,
+                        duration = duration,
+                        onSliderChange = { newProgress ->
+                            if (duration > 0) {
+                                seekToPosition = (newProgress * duration).toLong()
+                            }
+                        }
                     )
                 }
             }
