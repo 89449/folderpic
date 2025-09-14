@@ -30,27 +30,45 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerUI(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
-    onTogglePlay: () -> Unit
+    currentTime: Long,
+    totalDuration: Long,
+    onTogglePlay: () -> Unit,
+    onRewind: () -> Unit,
+    onForward: () -> Unit,
+    onSeekStart: () -> Unit,
+    onSeekEnd: (Long) -> Unit
 ) {
+    var sliderPosition by remember { mutableStateOf(0f) }
+
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "00:00",
+            text = formatDuration(currentTime),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.width(8.dp))
         Slider(
-            value = 0f,
-            onValueChange = {},
+            value = if (totalDuration > 0) currentTime.toFloat() / totalDuration.toFloat() else 0f,
+            onValueChange = {
+                sliderPosition = it
+                onSeekStart()
+            },
+            onValueChangeFinished = {
+                onSeekEnd((totalDuration * sliderPosition).toLong())
+            },
             track = { sliderState ->
                 SliderDefaults.Track(
                     sliderState = sliderState,
@@ -61,7 +79,7 @@ fun PlayerUI(
         )
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(
-            onClick = {},
+            onClick = onRewind,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
@@ -85,7 +103,7 @@ fun PlayerUI(
         }
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(
-            onClick = {},
+            onClick = onForward,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
@@ -94,4 +112,10 @@ fun PlayerUI(
             Icon(Icons.Filled.Forward10, contentDescription = null)
         }
     }
+}
+
+fun formatDuration(duration: Long): String {
+    val minutes = (duration / 1000) / 60
+    val seconds = (duration / 1000) % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }
