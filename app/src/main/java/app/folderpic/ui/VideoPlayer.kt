@@ -19,12 +19,19 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.delay
 
 @Composable
 fun VideoPlayer(
     uri: Uri, 
     currentPage: Boolean, 
     isPlaying: Boolean,
+    seekAction: Long?,
+    onSeekHandled: () -> Unit,
+    seekToPosition: Long?,
+    onSeekToPositionHandled: () -> Unit,
+    currentPosition: Long,
+    onPositionChange: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -46,6 +53,29 @@ fun VideoPlayer(
             exoPlayer.seekTo(0)
         }
     }
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            onPositionChange(exoPlayer.getCurrentPosition(), exoPlayer.getDuration())
+            delay(100)
+        }
+    }
+    
+    LaunchedEffect(seekAction) {
+        seekAction?.let { seekMillis ->
+            val newPosition = (exoPlayer.currentPosition + seekMillis).coerceAtLeast(0)
+            exoPlayer.seekTo(newPosition)
+            onSeekHandled()
+        }
+    }
+    
+    LaunchedEffect(seekToPosition) {
+        seekToPosition?.let { positionMs ->
+            exoPlayer.seekTo(positionMs)
+            onSeekToPositionHandled()
+        }
+    }
+
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
