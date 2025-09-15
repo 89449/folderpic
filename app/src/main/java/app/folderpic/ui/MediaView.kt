@@ -26,6 +26,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -49,6 +51,16 @@ fun MediaView(folderId: Long, mediaId: Long) {
     
     LaunchedEffect(folderId) {
         mediaItems = MediaLoader(context).getMediaForFolder(folderId)
+    }
+    
+    LaunchedEffect(isToolbarVisible) {
+        val window = (context as? android.app.Activity)?.window ?: return@LaunchedEffect
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        if (isToolbarVisible) {
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        }
     }
     
     if (mediaItems.isNotEmpty()) {
@@ -82,11 +94,10 @@ fun MediaView(folderId: Long, mediaId: Long) {
                     VideoPlayer(
                         uri = item.uri,
                         currentPage = pagerState.currentPage == page,
+                        isSettled = pagerState.isScrollInProgress,
                         isPlaying = isPlaying,
                         seekAction = seekAction,
-                        onSeekHandled = { seekAction = null },
-                        seekToPosition = if (pagerState.currentPage == page) seekToPosition else null,
-                        onSeekToPositionHandled = { seekToPosition = null },
+                        seekToPosition = seekToPosition,
                         currentPosition = currentPosition,
                         onPositionChange = { pos, dur ->
                             currentPosition = pos
