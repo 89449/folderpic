@@ -31,6 +31,7 @@ import coil.compose.AsyncImage
 
 import app.folderpic.data.Folder
 import app.folderpic.data.MediaLoader
+import app.folderpic.util.coilImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +63,7 @@ fun FolderGrid(onFolderClick:(Long, String) -> Unit) {
                             .clip(RoundedCornerShape(16.dp))
                     ) {
                         AsyncImage(
-                            model = folder.thumbnailUri,
+                            model = coilImageRequest(context, folder.thumbnailUri),
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
