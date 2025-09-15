@@ -30,6 +30,7 @@ import coil.compose.AsyncImage
 
 import app.folderpic.data.MediaItem
 import app.folderpic.data.MediaLoader
+import app.folderpic.util.coilImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +62,7 @@ fun FolderContent(
                         }
                 ) {
                     AsyncImage(
-                        model = mediaItem.uri,
+                        model = coilImageRequest(context, mediaItem.uri),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
