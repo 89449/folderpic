@@ -21,15 +21,16 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 
+import android.util.Log
+
 @Composable
 fun VideoPlayer(
     uri: Uri, 
     currentPage: Boolean, 
+    isSettled: Boolean,
     isPlaying: Boolean,
     seekAction: Long?,
-    onSeekHandled: () -> Unit,
     seekToPosition: Long?,
-    onSeekToPositionHandled: () -> Unit,
     currentPosition: Long,
     onPositionChange: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
@@ -46,18 +47,26 @@ fun VideoPlayer(
         }
     }
 
-    LaunchedEffect(currentPage, isPlaying) {
-        exoPlayer.playWhenReady = currentPage && isPlaying
-        
-        if (!currentPage) {
+    LaunchedEffect(currentPage, isSettled, isPlaying) {
+        if(currentPage && !isSettled) {
+        	exoPlayer.playWhenReady = isPlaying
+        } else {
+        	exoPlayer.playWhenReady = false
+        }
+    }
+    
+    LaunchedEffect(currentPage) {
+        if(currentPage) {
             exoPlayer.seekTo(0)
         }
     }
     
-    LaunchedEffect(Unit) {
-        while (true) {
-            onPositionChange(exoPlayer.getCurrentPosition(), exoPlayer.getDuration())
-            delay(100)
+    LaunchedEffect(isSettled) {
+        if(!isSettled) {
+            while (true) {
+                onPositionChange(exoPlayer.getCurrentPosition(), exoPlayer.getDuration())
+                delay(100)
+            }
         }
     }
     
@@ -65,14 +74,12 @@ fun VideoPlayer(
         seekAction?.let { seekMillis ->
             val newPosition = (exoPlayer.currentPosition + seekMillis).coerceAtLeast(0)
             exoPlayer.seekTo(newPosition)
-            onSeekHandled()
         }
     }
     
     LaunchedEffect(seekToPosition) {
         seekToPosition?.let { positionMs ->
             exoPlayer.seekTo(positionMs)
-            onSeekToPositionHandled()
         }
     }
 
